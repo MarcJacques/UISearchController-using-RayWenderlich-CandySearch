@@ -35,13 +35,6 @@ class MasterViewController: UIViewController {
   
   var filteredCandies: [Candy] = []
   var candies: [Candy] = []
-  var isSearchBarEmpty: Bool {
-    return searchController.searchBar.text?.isEmpty ?? true
-  }
-  var isFiltering: Bool {
-    return searchController.isActive && !isSearchBarEmpty
-  }
-  
   let searchController = UISearchController(searchResultsController: nil)//placing nil indicicates to the compiler that we will be using the serchController on this current view to display our search results. If we want another viewController to display the result we will place the name for that viewController
   
   override func viewDidLoad() {
@@ -64,6 +57,15 @@ class MasterViewController: UIViewController {
     }
   }
   
+  var isSearchBarEmpty: Bool {
+    return searchController.searchBar.text?.isEmpty ?? true
+  }
+  
+  var isFiltering: Bool {
+    return searchController.isActive && !isSearchBarEmpty
+  
+  }
+  
   func filterContentForSearchText(_ searchText: String, category: Candy.Category? = nil) {
     filteredCandies = candies.filter { (candy: Candy) -> Bool in
       return candy.name.lowercased().contains(searchText.lowercased())
@@ -80,8 +82,13 @@ class MasterViewController: UIViewController {
         return
     }
     
-    let candy = candies[indexPath.row]
-    detailViewController.candy = candy
+    let candy: Candy
+    if isFiltering {
+      candy = filteredCandies[indexPath.row]
+    } else {
+      candy = candies[indexPath.row]
+    }
+      detailViewController.candy = candy
   }
 }
 
