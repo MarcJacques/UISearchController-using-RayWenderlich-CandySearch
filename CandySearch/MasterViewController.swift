@@ -33,10 +33,27 @@ class MasterViewController: UIViewController {
   @IBOutlet var searchFooter: SearchFooter!
   @IBOutlet var searchFooterBottomConstraint: NSLayoutConstraint!
   
+  var filteredCandies: [Candy] = []
   var candies: [Candy] = []
+  var isSearchBarEmpty: Bool {
+    return searchController.searchBar.text?.isEmpty ?? true
+  }
+  var isFiltering: Bool {
+    return searchController.isActive && !isSearchBarEmpty
+  }
+  
+  let searchController = UISearchController(searchResultsController: nil)//placing nil indicicates to the compiler that we will be using the serchController on this current view to display our search results. If we want another viewController to display the result we will place the name for that viewController
   
   override func viewDidLoad() {
     super.viewDidLoad()
+    
+    candies = Candy.candies()
+    
+    searchController.searchResultsUpdater = self
+    searchController.obscuresBackgroundDuringPresentation = false
+    searchController.searchBar.placeholder = "Search Candies"
+    navigationItem.searchController = searchController
+    definesPresentationContext = true
   }
   
   override func viewWillAppear(_ animated: Bool) {
@@ -45,6 +62,13 @@ class MasterViewController: UIViewController {
     if let indexPath = tableView.indexPathForSelectedRow {
       tableView.deselectRow(at: indexPath, animated: true)
     }
+  }
+  
+  func filterContentForSearchText(_ searchText: String, category: Candy.Category? = nil) {
+    filteredCandies = candies.filter { (candy: Candy) -> Bool in
+      return candy.name.lowercased().contains(searchText.lowercased())
+    }
+    tableView.reloadData()
   }
   
   override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -64,16 +88,31 @@ class MasterViewController: UIViewController {
 extension MasterViewController: UITableViewDataSource {
   func tableView(_ tableView: UITableView,
                  numberOfRowsInSection section: Int) -> Int {
+    if isFiltering {
+      return filteredCandies.count
+    }
     return candies.count
   }
   
   func tableView(_ tableView: UITableView,
                  cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-    let cell = tableView.dequeueReusableCell(withIdentifier: "Cell",
-                                             for: indexPath)
-    let candy = candies[indexPath.row]
+    let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+    let candy: Candy
+    if isFiltering {
+      candy = filteredCandies[indexPath.row]
+    } else {
+      candy = candies[indexPath.row]
+    }
     cell.textLabel?.text = candy.name
     cell.detailTextLabel?.text = candy.category.rawValue
     return cell
+  }
+}
+
+extension MasterViewController: UISearchResultsUpdating {
+  func updateSearchResults(for searchController: UISearchController) {
+    let searchBar = searchController.searchBar
+    filterContentForSearchText(searchBar.text!)
+    
   }
 }
